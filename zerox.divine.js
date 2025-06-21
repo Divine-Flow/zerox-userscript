@@ -5,7 +5,7 @@
 // @description  💡 Built for speed. Designed for users. Powered by Divine.
 // @author       Divine Reinhard Micheal
 // @updateURL    https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js
-// @downloadURL  https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/.zerox.divine.js
+// @downloadURL  https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js
 // @match        *://linkvertise.com/*
 // @match        *://*.codex.lol/*
 // @match        *://loot-link.com/*
@@ -36,22 +36,18 @@
 (async function () {
   'use strict';
 
-  const CURRENT_VERSION = '1.0.7';
+  const CURRENT_VERSION = '1.0.8';
   const bypassAPI = atob('aHR0cHM6Ly9hcGkuc29sYXIteC50b3AvZnJlZS9ieXBhc3M/dXJsPQ==');
   const hostname = location.hostname;
   const pathname = location.pathname + location.search;
   let retryCount = 0;
 
   if (location.href.startsWith('https://ads.luarmor.net/get_key')) {
-    showProgressNotification(
-      '⚠️ Bypass Detected',
-      'Redirecting to Luarmor. You might get blacklisted for any bypass attempts.'
-    );
-
+    showProgressNotification('⚠️ Bypass Detected', 'Luarmor key system detected. Avoid bypassing.');
     const observer = new MutationObserver(() => {
       const errorPopup = document.querySelector('.swal2-popup.swal2-modal.swal2-icon-error');
       if (errorPopup) {
-        showProgressNotification('⛔ Blacklisted', 'Luarmor has likely blacklisted you.');
+        showProgressNotification('⛔ Blacklisted', 'Luarmor has blacklisted you.');
         playSound('error');
         observer.disconnect();
 
@@ -118,7 +114,6 @@
       } else throw new Error(data.message);
     } catch (e) {
       retryCount++;
-      console.warn("Retrying...", e);
       playSound('warning');
       showProgressNotification("⚠️ Retry", `Retrying in 5s (${retryCount}/3)...`);
       await delay(5000);
@@ -211,7 +206,7 @@
 
   async function checkForUpdates() {
     try {
-      const res = await fetch('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js');
+      const res = await fetch('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.version.json');
       const data = await res.json();
       if (data.version !== CURRENT_VERSION) {
         showProgressNotification('🔔 Update Available', `v${data.version} — click to update`);
