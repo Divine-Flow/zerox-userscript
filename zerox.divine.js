@@ -211,13 +211,13 @@
 
   async function checkForUpdates() {
     try {
-      const res = await fetch('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.version.json');
+      const res = await fetch('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js');
       const data = await res.json();
       if (data.version !== CURRENT_VERSION) {
         showProgressNotification('🔔 Update Available', `v${data.version} — click to update`);
         const box = document.getElementById('zerox-progress');
         box.style.cursor = 'pointer';
-        box.onclick = () => window.open('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.user.js', '_blank');
+        box.onclick = () => window.open('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js', '_blank');
       }
     } catch (e) {
       console.warn('Update check failed:', e);
