@@ -4,8 +4,8 @@
 // @version      1.0.7
 // @description  💡 Built for speed. Designed for users. Powered by Divine.
 // @author       Divine Reinhard Micheal
-// @updateURL    https://raw.githubusercontent.com/YOUR_USERNAME/zerox-userscript/main/zerox.user.js
-// @downloadURL  https://raw.githubusercontent.com/YOUR_USERNAME/zerox-userscript/main/zerox.user.js
+// @updateURL    https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js
+// @downloadURL  https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/.zerox.divine.js
 // @match        *://linkvertise.com/*
 // @match        *://*.codex.lol/*
 // @match        *://loot-link.com/*
