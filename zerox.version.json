@@ -1,1 +1,4 @@
-{ "version": "1.0.8", "changelog": "Test update" }
+{
+  "version": "1.0.8",
+  "changelog": "Added update checker and Luarmor blacklist warning"
+}
