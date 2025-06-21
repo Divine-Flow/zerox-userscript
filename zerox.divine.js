@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZEROX Advanced Bypasser [Modern UI - Redirect Only]
 // @namespace    http://tampermonkey.net/
-// @version      1.0.8
+// @version      1.0.7
 // @description  💡 Built for speed. Designed for users. Powered by Divine.
 // @author       Divine Reinhard Micheal
 // @updateURL    https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js
@@ -36,48 +36,91 @@
 (async function () {
   'use strict';
 
-  const CURRENT_VERSION = '1.0.8';
-  const bypassAPI = atob('aHR0cHM6Ly9hcGkuc29sYXIteC50b3AvZnJlZS9ieXBhc3M/dXJsPQ==');
   const hostname = location.hostname;
   const pathname = location.pathname + location.search;
-  let retryCount = 0;
+  const CURRENT_VERSION = '1.0.7';
+  const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js';
 
+  // Luarmor blacklist detection & auto-close
   if (location.href.startsWith('https://ads.luarmor.net/get_key')) {
-    showProgressNotification('⚠️ Bypass Detected', 'Luarmor key system detected. Avoid bypassing.');
+    showProgressNotification(
+      '⚠️ Bypass Detected',
+      'Redirecting to Luarmor. You might get blacklisted for any bypass attempts.'
+    );
+
     const observer = new MutationObserver(() => {
       const errorPopup = document.querySelector('.swal2-popup.swal2-modal.swal2-icon-error');
       if (errorPopup) {
-        showProgressNotification('⛔ Blacklisted', 'Luarmor has blacklisted you.');
-        playSound('error');
+        showProgressNotification(
+          '⛔ Blacklisted',
+          'Luarmor has likely blacklisted your IP or device.'
+        );
+
         observer.disconnect();
 
+        // Auto-close countdown
         let seconds = 5;
-        const countdown = setInterval(() => {
+        const interval = setInterval(() => {
           if (seconds === 0) {
-            clearInterval(countdown);
+            clearInterval(interval);
             window.close();
           } else {
-            showProgressNotification('⏳ Closing Tab', `This tab will close in ${seconds--}s...`);
+            showProgressNotification(
+              '⏳ Closing Tab',
+              `This tab will close in ${seconds} second${seconds > 1 ? 's' : ''}...`
+            );
+            seconds--;
           }
         }, 1000);
       }
     });
+
     observer.observe(document.body, { childList: true, subtree: true });
     return;
   }
 
-  if (hostname === 'linkvertise.com' && (pathname === '/' || pathname === '' || pathname.includes('/376138/arceus-x-neo-key-system-1'))) return;
-  if (hostname === 'linkvertise.com') return location.href = location.href.replace('linkvertise.com', 'linkvertise.lol');
-  if (hostname.includes('codex.lol')) return showProgressNotification("Notice", "❗ No stages or already whitelisted");
-  if (location.href.includes('spdmteam.com/key-system-bypass')) return showProgressNotification("✅ Key System", "Key System completed!");
-  if (location.href.includes('spdmteam.com/key-system-1')) return showProgressNotification("Captcha", "🔐 Complete the captcha!");
+  // Skip bypass for specific Linkvertise paths or homepage
+  if (
+    hostname === 'linkvertise.com' &&
+    (pathname.startsWith('/376138/arceus-x-neo-key-system-1') || pathname === '/' || pathname === '')
+  ) return;
 
+  // Redirect all other linkvertise.com to .lol
+  if (hostname === 'linkvertise.com') {
+    location.href = location.href.replace('linkvertise.com', 'linkvertise.lol');
+    return;
+  }
+
+  // Show codex.lol notice
+  if (hostname.includes('codex.lol')) {
+    showProgressNotification("Notice", "❗ No stages available or already whitelisted");
+    return;
+  }
+
+  // Special handling for specific spdmteam pages
+  if (location.href.includes('spdmteam.com/key-system-bypass')) {
+    showProgressNotification("Success", "✅ Key System completed!");
+    return;
+  }
+  if (location.href.includes('spdmteam.com/key-system-1')) {
+    showProgressNotification("Captcha", "🔐 Please complete the captcha!");
+    return;
+  }
+
+  // rip.linkvertise.lol auto button click logic
   if (hostname.includes('rip.linkvertise.lol')) {
-    const clickButtons = ['#cta-button', '#75590a48-78ab-4d60-acbd-6024d87a3a71', '#55c60a5a-c0d6-4997-aa37-12511fd0f337'];
-    setInterval(() => clickButtons.forEach(sel => {
-      const el = document.querySelector(sel);
-      if (el && el.offsetParent !== null) el.click();
-    }), 800);
+    const clickButtons = [
+      '#cta-button',
+      '#75590a48-78ab-4d60-acbd-6024d87a3a71',
+      '#55c60a5a-c0d6-4997-aa37-12511fd0f337'
+    ];
+    const tryClick = () => {
+      for (const sel of clickButtons) {
+        const el = document.querySelector(sel);
+        if (el && el.offsetParent !== null) el.click();
+      }
+    };
+    setInterval(tryClick, 800);
     return;
   }
 
@@ -92,43 +135,31 @@
   const currentDomain = hostname.replace(/^www\.|^mobile\.|^www2\./, '');
   if (!domainWhitelist.some(domain => currentDomain.endsWith(domain))) return;
 
-  addFloatingButton();
-  tryBypass(location.href);
-  checkForUpdates();
-
-  async function tryBypass(url) {
-    if (retryCount >= 3) return showProgressNotification("❌ Max Retries", "Bypass failed 3 times.");
-    try {
-      showProgressNotification("Bypass in Progress", "Please wait...");
-      const start = Date.now();
-      const res = await fetch(`${bypassAPI}${encodeURIComponent(url)}`);
-      const data = await res.json();
-
-      if ((data.status === 'success' || data.success) && data.result) {
-        const time = ((Date.now() - start) / 1000).toFixed(1);
-        showRedirectNotice(`✅ Bypassed in ${time}s`);
-        playSound('success');
-        logBypassedLink(url, data.result);
-        await delay(2000);
-        location.href = data.result;
-      } else throw new Error(data.message);
-    } catch (e) {
-      retryCount++;
-      playSound('warning');
-      showProgressNotification("⚠️ Retry", `Retrying in 5s (${retryCount}/3)...`);
-      await delay(5000);
-      tryBypass(url);
-    }
-  }
+  const bypassAPI = atob('aHR0cHM6Ly9hcGkuc29sYXIteC50b3AvZnJlZS9ieXBhc3M/dXJsPQ==');
 
   function showProgressNotification(title, subtitle = '') {
     removeNotification();
     const box = document.createElement('div');
     box.id = 'zerox-progress';
     box.innerHTML = `
-      <div style="background:#1e1e1e;color:white;border:2px solid #2ecc71;border-radius:12px;padding:14px 20px;width:320px;font-family:'Segoe UI';position:fixed;top:20px;right:20px;z-index:999999;box-shadow:0 0 8px rgba(0,0,0,0.3);transform:translateX(350px);animation:slideIn 0.4s forwards;">
-        <div style="font-size:16px;font-weight:600;">${title}</div>
-        <div style="font-size:13px;opacity:0.85;margin-top:4px;">${subtitle}</div>
+      <div style="
+        background: #1e1e1e;
+        color: white;
+        border: 2px solid #2ecc71;
+        border-radius: 12px;
+        padding: 14px 20px;
+        width: 320px;
+        font-family: 'Segoe UI', sans-serif;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 999999;
+        box-shadow: 0 0 8px rgba(0,0,0,0.3);
+        transform: translateX(350px);
+        animation: slideIn 0.4s forwards;
+      ">
+        <div style="font-size: 16px; font-weight: 600;">${title}</div>
+        <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">${subtitle}</div>
       </div>
     `;
     GM_addStyle(`@keyframes slideIn { to { transform: translateX(0); } }`);
@@ -140,9 +171,24 @@
     const box = document.createElement('div');
     box.id = 'zerox-result';
     box.innerHTML = `
-      <div style="background:#1e1e1e;color:white;border:2px solid #3498db;border-radius:12px;padding:14px 20px;width:320px;font-family:'Segoe UI';position:fixed;top:20px;right:20px;z-index:999999;box-shadow:0 0 8px rgba(0,0,0,0.3);transform:translateX(350px);animation:slideIn 0.4s forwards;">
-        <div style="font-size:16px;font-weight:600;">${message}</div>
-        <div id="zerox-countdown" style="margin-top:8px;font-size:13px;opacity:0.8;">Redirecting in ${countdown} seconds...</div>
+      <div style="
+        background: #1e1e1e;
+        color: white;
+        border: 2px solid #3498db;
+        border-radius: 12px;
+        padding: 14px 20px;
+        width: 320px;
+        font-family: 'Segoe UI', sans-serif;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 999999;
+        box-shadow: 0 0 8px rgba(0,0,0,0.3);
+        transform: translateX(350px);
+        animation: slideIn 0.4s forwards;
+      ">
+        <div style="font-size: 16px; font-weight: 600;">${message}</div>
+        <div id="zerox-countdown" style="margin-top: 8px; font-size: 13px; opacity: 0.8;">Redirecting in ${countdown} seconds...</div>
       </div>
     `;
     document.body.appendChild(box);
@@ -161,61 +207,57 @@
   }
 
   function delay(ms) {
-    return new Promise(r => setTimeout(r, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  function addFloatingButton() {
-    const btn = document.createElement('button');
-    btn.textContent = "🔄 Manual Bypass";
-    btn.style = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #3498db;
-      color: white;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Segoe UI';
-      font-size: 14px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      z-index: 999999;
-      cursor: pointer;
-    `;
-    btn.onclick = () => tryBypass(window.location.href);
-    document.body.appendChild(btn);
+  async function tryBypass(url) {
+    try {
+      showProgressNotification("Bypass in Progress", "Please wait while the bypass process completes...");
+      const start = Date.now();
+
+      const response = await fetch(`${bypassAPI}${encodeURIComponent(url)}`);
+      const data = await response.json();
+
+      if ((data.status === 'success' || data.success) && data.result) {
+        const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+        showRedirectNotice(`Bypassed in ${elapsed}s`);
+        await delay(2000);
+        window.location.href = data.result;
+      } else {
+        throw new Error(data.message || 'Bypass failed');
+      }
+    } catch (err) {
+      console.error('Bypass failed, retrying in 5s:', err);
+      showProgressNotification("Bypass failed, retrying...", "Retrying in 5 seconds");
+      await delay(5000);
+      tryBypass(url);
+    }
   }
 
-  function playSound(type = 'success') {
-    const url = {
-      success: 'https://notificationsounds.com/storage/sounds/file-sounds-1153-pristine.mp3',
-      error: 'https://notificationsounds.com/storage/sounds/file-sounds-1145-correct.mp3',
-      warning: 'https://notificationsounds.com/storage/sounds/file-sounds-1148-you-wouldnt-believe.mp3'
-    }[type];
-    if (!url) return;
-    const audio = new Audio(url);
-    audio.volume = 0.5;
-    audio.play().catch(console.error);
-  }
-
-  function logBypassedLink(original, bypassed) {
-    const logs = JSON.parse(localStorage.getItem('zerox_history') || '[]');
-    logs.unshift({ original, bypassed, time: new Date().toLocaleString() });
-    localStorage.setItem('zerox_history', JSON.stringify(logs.slice(0, 25)));
-  }
+  tryBypass(window.location.href);
+  checkForUpdates();
 
   async function checkForUpdates() {
     try {
-      const res = await fetch('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.version.json');
-      const data = await res.json();
-      if (data.version !== CURRENT_VERSION) {
-        showProgressNotification('🔔 Update Available', `v${data.version} — click to update`);
+      const response = await fetch(GITHUB_RAW_URL);
+      const text = await response.text();
+      const match = text.match(/@version\s+([\d.]+)/);
+      if (match && match[1] !== CURRENT_VERSION) {
+        showProgressNotification(
+          '🔔 Update Available',
+          `New version ${match[1]} is available. Click to update.`
+        );
         const box = document.getElementById('zerox-progress');
-        box.style.cursor = 'pointer';
-        box.onclick = () => window.open('https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js', '_blank');
+        if (box) {
+          box.style.cursor = 'pointer';
+          box.onclick = () => {
+            window.open(GITHUB_RAW_URL, '_blank');
+          };
+        }
       }
-    } catch (e) {
-      console.warn('Update check failed:', e);
+    } catch (err) {
+      console.warn('[ZEROX] Update check failed:', err);
     }
   }
+
 })();
