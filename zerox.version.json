@@ -1,4 +1,4 @@
 {
-  "version": "1.0.8",
-  "changelog": "Added update checker and Luarmor blacklist warning"
+  "version": "1.0.1",
+  "changelog": "Fixed Bugs and Luarmor blacklist warning"
 }
