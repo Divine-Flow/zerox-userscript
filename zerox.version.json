@@ -1,4 +1,1 @@
-{
-  "version": "1.0.7",
-  "changelog": "Auto-close tab after blacklist, retry limit, improved UI"
-}
+{ "version": "1.0.8", "changelog": "Test update" }
