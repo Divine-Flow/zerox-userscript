@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZEROX Advanced Bypasser [Modern UI - Redirect Only]
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @description  💡 Built for speed. Designed for users. Powered by Divine.
 // @author       Divine Reinhard Micheal
 // @updateURL    https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js
@@ -41,7 +41,6 @@
   const CURRENT_VERSION = '1.0.7';
   const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js';
 
-  // Luarmor blacklist detection & auto-close
   if (location.href.startsWith('https://ads.luarmor.net/get_key')) {
     showProgressNotification(
       '⚠️ Bypass Detected',
@@ -58,12 +57,19 @@
 
         observer.disconnect();
 
-        // Auto-close countdown
         let seconds = 5;
         const interval = setInterval(() => {
           if (seconds === 0) {
             clearInterval(interval);
-            window.close();
+            try {
+              window.close();
+              if (!window.closed) throw new Error("Blocked");
+            } catch {
+              showProgressNotification(
+                '🔒 Close Manually',
+                'Browser blocked auto-close. Please close this tab manually.'
+              );
+            }
           } else {
             showProgressNotification(
               '⏳ Closing Tab',
@@ -79,25 +85,24 @@
     return;
   }
 
-  // Skip bypass for specific Linkvertise paths or homepage
   if (
     hostname === 'linkvertise.com' &&
     (pathname.startsWith('/376138/arceus-x-neo-key-system-1') || pathname === '/' || pathname === '')
   ) return;
 
-  // Redirect all other linkvertise.com to .lol
   if (hostname === 'linkvertise.com') {
-    location.href = location.href.replace('linkvertise.com', 'linkvertise.lol');
+    setTimeout(() => {
+      location.href = location.href.replace('linkvertise.com', 'linkvertise.lol');
+    }, 10000); // wait 10 seconds before redirecting
+    showProgressNotification("⏳ Redirecting", "You'll be redirected to Linkvertise.lol in 10 seconds...");
     return;
   }
 
-  // Show codex.lol notice
   if (hostname.includes('codex.lol')) {
     showProgressNotification("Notice", "❗ No stages available or already whitelisted");
     return;
   }
 
-  // Special handling for specific spdmteam pages
   if (location.href.includes('spdmteam.com/key-system-bypass')) {
     showProgressNotification("Success", "✅ Key System completed!");
     return;
@@ -107,7 +112,6 @@
     return;
   }
 
-  // rip.linkvertise.lol auto button click logic
   if (hostname.includes('rip.linkvertise.lol')) {
     const clickButtons = [
       '#cta-button',
@@ -145,7 +149,7 @@
       <div style="
         background: #1e1e1e;
         color: white;
-        border: 2px solid #2ecc71;
+        border: 2px solid #e67e22;
         border-radius: 12px;
         padding: 14px 20px;
         width: 320px;
@@ -154,73 +158,44 @@
         top: 20px;
         right: 20px;
         z-index: 999999;
-        box-shadow: 0 0 8px rgba(0,0,0,0.3);
-        transform: translateX(350px);
-        animation: slideIn 0.4s forwards;
+        box-shadow: 0 0 12px rgba(255,255,255,0.15);
+        opacity: 0;
+        transform: translateX(100%);
+        animation: slideInFade 0.5s forwards, fadeOut 0.6s ease-out 5s forwards;
       ">
         <div style="font-size: 16px; font-weight: 600;">${title}</div>
         <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">${subtitle}</div>
       </div>
     `;
-    GM_addStyle(`@keyframes slideIn { to { transform: translateX(0); } }`);
+    GM_addStyle(`
+      @keyframes slideInFade {
+        to { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes fadeOut {
+        to { opacity: 0; transform: translateX(100%); }
+      }
+    `);
     document.body.appendChild(box);
-  }
-
-  function showRedirectNotice(message, countdown = 2) {
-    removeNotification();
-    const box = document.createElement('div');
-    box.id = 'zerox-result';
-    box.innerHTML = `
-      <div style="
-        background: #1e1e1e;
-        color: white;
-        border: 2px solid #3498db;
-        border-radius: 12px;
-        padding: 14px 20px;
-        width: 320px;
-        font-family: 'Segoe UI', sans-serif;
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 999999;
-        box-shadow: 0 0 8px rgba(0,0,0,0.3);
-        transform: translateX(350px);
-        animation: slideIn 0.4s forwards;
-      ">
-        <div style="font-size: 16px; font-weight: 600;">${message}</div>
-        <div id="zerox-countdown" style="margin-top: 8px; font-size: 13px; opacity: 0.8;">Redirecting in ${countdown} seconds...</div>
-      </div>
-    `;
-    document.body.appendChild(box);
-    const counter = document.getElementById('zerox-countdown');
-    let seconds = countdown;
-    const interval = setInterval(() => {
-      seconds--;
-      if (seconds <= 0) return clearInterval(interval);
-      counter.textContent = `Redirecting in ${seconds} seconds...`;
-    }, 1000);
   }
 
   function removeNotification() {
     document.getElementById('zerox-progress')?.remove();
-    document.getElementById('zerox-result')?.remove();
   }
 
-  function delay(ms) {
+  async function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async function tryBypass(url) {
     try {
-      showProgressNotification("Bypass in Progress", "Please wait while the bypass process completes...");
+      showProgressNotification("Bypass in Progress", "Please wait...");
       const start = Date.now();
-
       const response = await fetch(`${bypassAPI}${encodeURIComponent(url)}`);
       const data = await response.json();
 
       if ((data.status === 'success' || data.success) && data.result) {
         const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-        showRedirectNotice(`Bypassed in ${elapsed}s`);
+        showProgressNotification(`✅ Bypassed in ${elapsed}s`, "Redirecting...");
         await delay(2000);
         window.location.href = data.result;
       } else {
@@ -250,9 +225,7 @@
         const box = document.getElementById('zerox-progress');
         if (box) {
           box.style.cursor = 'pointer';
-          box.onclick = () => {
-            window.open(GITHUB_RAW_URL, '_blank');
-          };
+          box.onclick = () => window.open(GITHUB_RAW_URL, '_blank');
         }
       }
     } catch (err) {
