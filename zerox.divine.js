@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZEROX Advanced Bypasser [Modern UI - Redirect Only]
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @description  💡 Built for speed. Designed for users. Powered by Divine.
 // @author       Divine Reinhard Micheal
 // @updateURL    https://raw.githubusercontent.com/Divine-Flow/zerox-userscript/main/zerox.divine.js
